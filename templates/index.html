@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Device Selector</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #f0f0f0; 
+      padding: 20px; 
+    }
+    #chatbox { 
+      max-width: 700px; 
+      margin: auto; 
+      background: white; 
+      padding: 20px; 
+      border-radius: 10px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+    }
+    .msg { margin: 10px 0; }
+    .user { text-align: right; color: #007bff; }
+    .bot { text-align: left; color: #28a745; }
+    input { 
+      width: 80%; 
+      padding: 10px; 
+      border-radius: 8px; 
+      border: 1px solid #ccc; 
+      outline: none;
+    }
+    button { 
+      padding: 10px 20px; 
+      background: #007bff; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+    }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <div id="chatbox">
+    <h2>💻 AI Device Selector</h2>
+    <div id="chat"></div>
+    <input id="message" placeholder="Ask for a laptop or mobile..." />
+    <button id="send">Send</button>
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("message");
+    const btn = document.getElementById("send");
+
+    // Add messages to chat
+    function addMessage(sender, text) {
+        const div = document.createElement("div");
+        div.classList.add("msg", sender);
+        div.innerHTML = `<b>${sender === "bot" ? "Bot" : "You"}:</b> ${text}`;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Send user input to backend
+    async function sendMessage() {
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        addMessage("user", msg);
+        input.value = "";
+
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg })
+        });
+
+        const data = await response.json();
+        addMessage("bot", data.reply);
+    }
+
+    // Event listeners
+    btn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    // 🟢 AUTO-GREETING: trigger on page load
+    window.onload = function() {
+        addMessage("bot", "👋 Hi, I’m your AI Device Selector! What type of device are you looking for? (Laptop, Mobile, Tablet)");
+        fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "start" })
+        });
+    };
+  </script>
+</body>
+</html>
