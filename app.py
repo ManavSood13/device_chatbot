@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from watsonx_helper import get_ai_response
+from gemini_helper import get_ai_response
 
 app = Flask(__name__)
 
@@ -52,18 +52,69 @@ def ask():
         user_context["budget"] = user_message
         user_context["step"] = 4
 
-        # 🧠 Watsonx filter prompt for recommendations
+        # 🧠 Gemini filter prompt for recommendations
         filters = (
-            f"You are an expert tech advisor. Suggest 3 best {user_context['device_category']} "
+            f"You are an expert tech advisor for Indian consumers. "
+            f"Suggest exactly 3 best {user_context['device_category']} "
             f"{user_context['device_type']}s under the budget {user_context['budget']}. "
-            f"Include brand names and a one-line feature summary for each device. "
-            f"Return the response in numbered list format like:\n"
-            f"1. <Device Name> — <short description>\n"
-            f"2. <Device Name> — <short description>\n"
-            f"3. <Device Name> — <short description>"
+            f"Use real product names available in India. "
+            f"Give a one-line feature summary for each device. "
+            f"Return ONLY in this format:\n"
+            f"1. Device Name - short description\n"
+            f"2. Device Name - short description\n"
+            f"3. Device Name - short description"
         )
 
-        reply = get_ai_response(filters)
+        try:
+            reply = get_ai_response(filters)
+
+        except Exception as e:
+            print("⚠️ Gemini API failed:", e)
+
+            # Fallback recommendations
+            if user_context["device_type"] == "laptop":
+
+                if "gaming" in user_context["device_category"].lower():
+                    reply = """
+1. ASUS ROG Strix G16 - High-performance gaming laptop.
+2. Lenovo LOQ - Excellent gaming performance.
+3. HP Victus - Budget gaming option.
+"""
+
+                elif "office" in user_context["device_category"].lower():
+                    reply = """
+1. Dell Inspiron 15 - Great office laptop.
+2. Lenovo ThinkPad E14 - Professional use.
+3. HP Pavilion - Productivity focused.
+"""
+
+                elif "student" in user_context["device_category"].lower():
+                    reply = """
+1. ASUS Vivobook.
+2. Acer Aspire 7.
+3. Lenovo IdeaPad Slim.
+"""
+
+                else:
+                    reply = """
+1. ASUS Vivobook.
+2. Lenovo IdeaPad.
+3. HP Pavilion.
+"""
+
+            elif user_context["device_type"] == "mobile":
+                reply = """
+1. Samsung Galaxy S24.
+2. iPhone 15.
+3. OnePlus 12.
+"""
+
+            elif user_context["device_type"] == "tablet":
+                reply = """
+1. Samsung Galaxy Tab S9.
+2. Apple iPad Air.
+3. Xiaomi Pad 6.
+"""
 
         # 🧩 Format the reply into a clean list (with line breaks)
         formatted_reply = (
